@@ -1,0 +1,36 @@
+!SESSION 2022-07-12 07:20:40.532 -----------------------------------------------
+eclipse.buildId=Version 1.10.0
+java.version=11.0.14.1
+java.vendor=Eclipse Adoptium
+BootLoader constants: OS=win32, ARCH=x86_64, WS=win32, NL=pt_BR
+Command-line arguments:  -os win32 -ws win32 -arch x86_64
+
+!ENTRY com.st.stm32cube.ide.mcu.informationcenter 4 4 2022-07-12 07:21:21.783
+!MESSAGE CubeMX plugin appears to be active, Log4j initialization might be too late.
+
+!ENTRY com.st.stm32cube.ide.mcu.informationcenter 1 1 2022-07-12 07:21:22.032
+!MESSAGE Log4j initialized with config file C:\Users\cristian_ritter\Documents\PROJETOS\FitBox_STM\.metadata\.log4j.xml
+
+!ENTRY com.st.stm32cube.ide.mcu.ide 1 1 2022-07-12 07:21:38.540
+!MESSAGE Started RMI Server, listening on port 41337
+
+!ENTRY org.eclipse.equinox.p2.touchpoint.natives 2 0 2022-07-12 08:02:20.897
+!MESSAGE Could not remove temporary backup directory (it is safe to manually delete it and its contents): C:\Users\CRISTI~1\AppData\Local\Temp\STM32CubeIDE_66bcdb4e-4fac-45ab-9995-7b3eab7c6319
+!SESSION 2022-07-12 08:09:35.702 -----------------------------------------------
+eclipse.buildId=Version 1.10.1
+java.version=11.0.14.1
+java.vendor=Eclipse Adoptium
+BootLoader constants: OS=win32, ARCH=x86_64, WS=win32, NL=pt_BR
+Command-line arguments:  -os win32 -ws win32 -arch x86_64
+
+!ENTRY com.st.stm32cube.ide.mcu.informationcenter 4 4 2022-07-12 08:10:40.043
+!MESSAGE CubeMX plugin appears to be active, Log4j initialization might be too late.
+
+!ENTRY com.st.stm32cube.ide.mcu.informationcenter 1 1 2022-07-12 08:10:40.175
+!MESSAGE Log4j initialized with config file C:\Users\cristian_ritter\Documents\PROJETOS\FitBox_STM\.metadata\.log4j.xml
+
+!ENTRY com.st.stm32cube.ide.mcu.ide 1 1 2022-07-12 08:10:45.474
+!MESSAGE Started RMI Server, listening on port 41337
+
+!ENTRY org.eclipse.cdt.core 1 0 2022-07-12 08:29:20.482
+!MESSAGE Indexed 'FitBoxPRO' (30 sources, 95 headers) in 5.57 sec: 5,549 declarations; 28,437 references; 0 unresolved inclusions; 1 syntax errors; 2 unresolved names (0.0059%)
