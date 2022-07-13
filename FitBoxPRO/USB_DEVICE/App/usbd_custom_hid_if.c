@@ -91,22 +91,34 @@ uint8_t buffer[0x40];
 __ALIGN_BEGIN static uint8_t CUSTOM_HID_ReportDesc_FS[USBD_CUSTOM_HID_REPORT_DESC_SIZE] __ALIGN_END =
 {
   /* USER CODE BEGIN 0 */
-	    0x06, 0x00, 0xff,               //Usage Page(Undefined )
-		    0x09, 0x01,                    // USAGE (Undefined)
-		    0xa1, 0x01,                    // COLLECTION (Application)
-		    0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
-		    0x26, 0xff, 0x00,              //   LOGICAL_MAXIMUM (255)
-		    0x75, 0x08,                    //   REPORT_SIZE (8)
-		    0x95, 0x40,                    //   REPORT_COUNT (64)
-		    0x09, 0x01,                    //   USAGE (Undefined)
-		    0x81, 0x02,                    //   INPUT (Data,Var,Abs)
-		    0x95, 0x40,                    //   REPORT_COUNT (64)
-		    0x09, 0x01,                    //   USAGE (Undefined)
-		    0x91, 0x02,                    //   OUTPUT (Data,Var,Abs)
-		    0x95, 0x01,                    //   REPORT_COUNT (1)
-		    0x09, 0x01,                    //   USAGE (Undefined)
-		    0xb1, 0x02,                    //   FEATURE (Data,Var,Abs)  /* USER CODE END 0 */
-  0xC0    /*     END_COLLECTION	             */
+	     0x05, 0x01,       	// Usage Page = Generic Desktop
+	      0x09, 0x04,       	// Usage = Joystick
+	      0xA1, 0x01,       	// Collection = Application
+	        0x09, 0x33,       		// Usage (Rx)
+	        0x09, 0x34,       		// Usage (Ry)
+	        0x09, 0x35,       		// Usage (Ry)
+	        0x15, 0x00,       		// Logical  Minimum (0)
+	        0x26, 0xFF,0x0F,  		// Logical  Maximum (4095)
+	        0x35, 0x00,       		// Physical Minimum (0)
+	        0x46, 0xFF,0x0F,  		// Physical Maximum (4095)
+	        0x75, 0x0C,       		// Report Size (12)  10 bits
+	        0x95, 0x03,       		// Report Count (3)
+	        0x81, 0x02,       		// Input (Data,Var,Abs)
+			0x95, 0x01,       		// REPORT_COUNT (1)
+			0x75, 0x1c,       		// REPORT_SIZE (28)
+			0x81, 0x03,       		// INPUT (Cnst,Var,Abs)
+			0x09, 0x01,                //   USAGE (Undefined)
+		    0x15, 0x00,                //   LOGICAL_MINIMUM (0)
+		    0x26, 0xff, 0x00,          //   LOGICAL_MAXIMUM (255)
+		    0x75, 0x08,                //   REPORT_SIZE (8)
+			0x95, 0x40,                //   REPORT_COUNT (64)
+			0x91, 0x02,                //   OUTPUT (Data,Var,Abs)
+			0x09, 0x01,                //   USAGE (Undefined)
+			0x95, 0x01,                //   REPORT_COUNT (1)
+			0xb1, 0x02,                //   FEATURE (Data,Var,Abs)
+
+			/* USER CODE END 0 */
+  0xC0    /*     END_COLLECTION	             */ //
 };
 
 /* USER CODE BEGIN PRIVATE_VARIABLES */
@@ -190,7 +202,6 @@ static int8_t CUSTOM_HID_OutEvent_FS(uint8_t* state)
 {
   /* USER CODE BEGIN 6 */
 	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-	HAL_Delay(500);
   return (USBD_OK);
   /* USER CODE END 6 */
 }
