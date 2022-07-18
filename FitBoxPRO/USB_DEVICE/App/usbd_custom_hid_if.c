@@ -96,7 +96,7 @@ __ALIGN_BEGIN static uint8_t CUSTOM_HID_ReportDesc_FS[USBD_CUSTOM_HID_REPORT_DES
 	      0xA1, 0x01,       	// Collection = Application
 	        0x09, 0x33,       		// Usage (Rx)
 	        0x09, 0x34,       		// Usage (Ry)
-	        0x09, 0x35,       		// Usage (Ry)
+	        0x09, 0x35,       		// Usage (Rz)
 	        0x15, 0x00,       		// Logical  Minimum (0)
 	        0x26, 0xFF,0x0F,  		// Logical  Maximum (4095)
 	        0x35, 0x00,       		// Physical Minimum (0)
@@ -148,7 +148,7 @@ extern USBD_HandleTypeDef hUsbDeviceFS;
 
 static int8_t CUSTOM_HID_Init_FS(void);
 static int8_t CUSTOM_HID_DeInit_FS(void);
-static int8_t CUSTOM_HID_OutEvent_FS(uint8_t* state);
+static int8_t CUSTOM_HID_OutEvent_FS(uint8_t * state);
 
 /**
   * @}
@@ -197,7 +197,7 @@ static int8_t CUSTOM_HID_DeInit_FS(void)
   * @param  state: Event state
   * @retval USBD_OK if all operations are OK else USBD_FAIL
   */
-static int8_t CUSTOM_HID_OutEvent_FS(uint8_t* state)
+static int8_t CUSTOM_HID_OutEvent_FS(uint8_t * state)
 {
   /* USER CODE BEGIN 6 */
 	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);

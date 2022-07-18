@@ -22,7 +22,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "string.h"
+#include "stdio.h"
+#include "stdlib.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -65,28 +67,28 @@ extern USBD_HandleTypeDef hUsbDeviceFS;
 
 typedef struct
 {
-	uint8_t rx_8msb; // msb 8 bits rx
-	uint8_t rx_4lsb_ry_4msb; // lsb 4 bits rx + msb 4 bits ry
-	uint8_t ry_8lsb; // 8 bits lsb ry
-	uint8_t rz_8msb; // 8 bits msb_rz
-	uint8_t rz_4lsb; // 4 bits lsb rx
+	uint8_t rx_8lsb; // lsb 8 bits rx
+	uint8_t ry_4lsb_rx_4msb; // msb 4 bits rx + lsb 4 bits ry
+	uint8_t ry_8msb; // 8 bits msb ry
+	uint8_t rz_8lsb; // 8 bits lsb_rz
+	uint8_t rz_4msb; // 4 bits msb rx
 	uint8_t dummy_bits0 ;
 	uint8_t dummy_bits1 ;
 	uint8_t dummy_bits2 ;
 } joystickHID;
-joystickHID joystickhid = {0, 0, 0, 0, 0};
+joystickHID joystickhid = {0, 0, 0, 0, 0, 0, 0, 0};
 
-uint32_t ADCValue[3] = {0, 0, 0};
+uint16_t ADCValue[3] = {0, 1, 2};
 
 void LerADCS(){
-  ADCValue[0] = HAL_ADC_GetValue(&hadc1); // axis x
-  ADCValue[1] = HAL_ADC_GetValue(&hadc1); // axis y
-  ADCValue[2] = HAL_ADC_GetValue(&hadc1); // axis z
-  joystickhid.rx_8msb = ADCValue[0] >> 4;
-  joystickhid.rx_4lsb_ry_4msb = ( ADCValue[0] << 4 | ADCValue[1] >> 8);
-  joystickhid.ry_8lsb = ADCValue[1];
-  joystickhid.rz_8msb = ADCValue[2] >> 4;
-  joystickhid.rz_4lsb = ADCValue[2];
+//  ADCValue[0] = HAL_ADC_GetValue(&hadc1); // axis x
+//  ADCValue[1] = HAL_ADC_GetValue(&hadc1); // axis y
+//  ADCValue[2] = HAL_ADC_GetValue(&hadc1); // axis z
+  joystickhid.rx_8lsb = (ADCValue[0]);
+  joystickhid.ry_4lsb_rx_4msb = ((ADCValue[1] & 0xf) << 4 | ADCValue[0] >> 8);
+  joystickhid.ry_8msb = ADCValue[1] >> 4;
+  joystickhid.rz_8lsb = ADCValue[2];
+  joystickhid.rz_4msb = ADCValue[2] >> 4;
   HAL_Delay(1);
 }
 /* USER CODE END 0 */
@@ -124,7 +126,7 @@ int main(void)
   MX_USB_DEVICE_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-  HAL_ADC_Start_DMA(&hadc1, ADCValue, 3);
+//  HAL_ADC_Start_DMA(&hadc1, (uint32_t*)ADCValue, 3);
 
   /* USER CODE END 2 */
 
@@ -134,10 +136,25 @@ int main(void)
   {
 	  LerADCS();
 	  USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, &joystickhid, sizeof(joystickhid));
+	  HAL_Delay(1);
 
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  uint8_t Test[] = "Valores inicio !!!\r\n"; //Data to send
+	  HAL_UART_Transmit(&huart1,Test,sizeof(Test),10);// Sending in normal mode
+
+	  char buffer[6];
+	  HAL_UART_Transmit(&huart1, (uint8_t*) buffer, sprintf(buffer, "%u ", joystickhid.rx_8lsb), 100);
+	  HAL_UART_Transmit(&huart1, (uint8_t*) buffer, sprintf(buffer, "%u ", joystickhid.ry_4lsb_rx_4msb), 100);
+	  HAL_UART_Transmit(&huart1, (uint8_t*) buffer, sprintf(buffer, "%u ", joystickhid.ry_8msb), 100);
+	  HAL_UART_Transmit(&huart1, (uint8_t*) buffer, sprintf(buffer, "%u ", joystickhid.rz_4msb), 100);
+	  HAL_UART_Transmit(&huart1, (uint8_t*) buffer, sprintf(buffer, "%u ", joystickhid.rz_8lsb), 100);
+
+	  uint8_t Test2[] = "\r\n Valores fim !!!\r\n"; //Data to send
+	  HAL_UART_Transmit(&huart1,Test2,sizeof(Test),10);// Sending in normal mode
+
+	  HAL_Delay(1000);
   }
   /* USER CODE END 3 */
 }
@@ -274,7 +291,7 @@ static void MX_USART1_UART_Init(void)
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
-  huart1.Init.Mode = UART_MODE_TX;
+  huart1.Init.Mode = UART_MODE_TX_RX;
   huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
   huart1.Init.OverSampling = UART_OVERSAMPLING_16;
   if (HAL_UART_Init(&huart1) != HAL_OK)

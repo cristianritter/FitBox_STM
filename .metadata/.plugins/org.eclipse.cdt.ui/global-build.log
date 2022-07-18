@@ -1,7 +1,7 @@
-10:57:13 **** Incremental Build of configuration Debug for project FitBoxPRO ****
+12:31:57 **** Incremental Build of configuration Debug for project FitBoxPRO ****
 make -j4 all 
 arm-none-eabi-size   FitBoxPRO.elf 
    text	   data	    bss	    dec	    hex	filename
-  34812	    384	   3832	  39028	   9874	FitBoxPRO.elf
+  36796	    492	   3844	  41132	   a0ac	FitBoxPRO.elf
 Finished building: default.size.stdout
  
