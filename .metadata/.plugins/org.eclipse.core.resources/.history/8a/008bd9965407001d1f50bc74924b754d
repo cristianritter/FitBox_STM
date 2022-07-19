@@ -91,32 +91,33 @@ uint8_t buffer[0x40];
 __ALIGN_BEGIN static uint8_t CUSTOM_HID_ReportDesc_FS[USBD_CUSTOM_HID_REPORT_DESC_SIZE] __ALIGN_END =
 {
   /* USER CODE BEGIN 0 */
-		  0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)   #global
-		    0x09, 0x05,                    // USAGE (Game Pad)
-		    0xa1, 0x01,                    // COLLECTION (Application)
-		    0xa1, 0x00,                    //   COLLECTION (Physical)
-		    0x05, 0x01,                    //     USAGE_PAGE (Generic Desktop)
-		    0x09, 0x33,                    //     USAGE (RX)
-		    0x09, 0x34,       // Usage (Ry)                                   ==8,9
-			0x09, 0x35,       // Usage (Ry)                                   ==10,11
-			0x09, 0x36,       // Usage (Slider)                               ==12,13
-			0x15, 0x00,                    //     LOGICAL_MINIMUM (0)
-			0x25, 0xff, 0x03,             //     LOGICAL_MAXIMUM (1023)
-		    0x35, 0x00,                   // Physical Minimum (0)                      ==19,20
-			0x46, 0xFF,0x03,              // Physical Maximum (1023)              ==21,22,23
-			0x75, 0x0A,                    //     REPORT_SIZE (10)
-			0x95, 0x01,                    //     REPORT_COUNT (1)
-			0x81, 0x02,                    //     INPUT (Data,Var,Abs)
-
-			0x95, 0x40,                    //   REPORT_COUNT (64)
-			0x09, 0x01,                    //   USAGE (Undefined)
-			0x91, 0x02,                    //   OUTPUT (Data,Var,Abs)
-			0x95, 0x01,                    //   REPORT_COUNT (1)
-			0x09, 0x01,                    //   USAGE (Undefined)
-			0xb1, 0x02,                    //   FEATURE (Data,Var,Abs)
-		    0xc0,                          //     END_COLLECTION
-				/* USER CODE END 0 */
-  0xC0    /*     END_COLLECTION	             */ //
+	     0x05, 0x01,       	// Usage Page = Generic Desktop
+	      0x09, 0x04,       	// Usage = Joystick
+	      0xA1, 0x01,       	// Collection = Application
+	        0x09, 0x33,       		// Usage (Rx)
+	        0x09, 0x34,       		// Usage (Ry)
+	        0x09, 0x35,       		// Usage (Rz)
+	        0x15, 0x00,       		// Logical  Minimum (0)
+	        0x26, 0xFF,0x0F,  		// Logical  Maximum (4095)
+	        0x35, 0x00,       		// Physical Minimum (0)
+	        0x46, 0xFF,0x0F,  		// Physical Maximum (4095)
+	        0x75, 0x0C,       		// Report Size (12)  12 bits
+	        0x95, 0x03,       		// Report Count (3)
+	        0x81, 0x02,       		// Input (Data,Var,Abs)
+			0x95, 0x01,       		// REPORT_COUNT (1)
+			0x75, 0x1c,       		// REPORT_SIZE (28)
+			0x81, 0x03,       		// INPUT (Cnst,Var,Abs)
+			0x09, 0x01,                //   USAGE (Undefined)
+		    0x15, 0x00,                //   LOGICAL_MINIMUM (0)
+		    0x26, 0xff, 0x00,          //   LOGICAL_MAXIMUM (255)
+		    0x75, 0x08,                //   REPORT_SIZE (8)
+			0x95, 0x40,                //   REPORT_COUNT (64)
+			0x91, 0x02,                //   OUTPUT (Data,Var,Abs)
+			0x09, 0x01,                //   USAGE (Undefined)
+			0x95, 0x01,                //   REPORT_COUNT (1)
+			0xb1, 0x02,                //   FEATURE (Data,Var,Abs) size 54
+  /* USER CODE END 0 */
+  0xC0    /*     END_COLLECTION	             */
 };
 
 /* USER CODE BEGIN PRIVATE_VARIABLES */
@@ -147,7 +148,7 @@ extern USBD_HandleTypeDef hUsbDeviceFS;
 
 static int8_t CUSTOM_HID_Init_FS(void);
 static int8_t CUSTOM_HID_DeInit_FS(void);
-static int8_t CUSTOM_HID_OutEvent_FS(uint8_t* state);
+static int8_t CUSTOM_HID_OutEvent_FS(uint8_t * state);
 
 /**
   * @}
@@ -196,10 +197,13 @@ static int8_t CUSTOM_HID_DeInit_FS(void)
   * @param  state: Event state
   * @retval USBD_OK if all operations are OK else USBD_FAIL
   */
-static int8_t CUSTOM_HID_OutEvent_FS(uint8_t* state)
+static int8_t CUSTOM_HID_OutEvent_FS(uint8_t * state)
 {
   /* USER CODE BEGIN 6 */
+	uint8_t * buffer[0x40];
 	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+    HAL_UART_Transmit(&huart1, (uint8_t*) buffer, sprintf(buffer, "%u ", state), 100);
+
   return (USBD_OK);
   /* USER CODE END 6 */
 }

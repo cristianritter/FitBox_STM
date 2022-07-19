@@ -135,7 +135,7 @@ __ALIGN_BEGIN static uint8_t CUSTOM_HID_ReportDesc_FS[USBD_CUSTOM_HID_REPORT_DES
 extern USBD_HandleTypeDef hUsbDeviceFS;
 
 /* USER CODE BEGIN EXPORTED_VARIABLES */
-
+extern UART_HandleTypeDef huart1;
 /* USER CODE END EXPORTED_VARIABLES */
 /**
   * @}
@@ -200,7 +200,11 @@ static int8_t CUSTOM_HID_DeInit_FS(void)
 static int8_t CUSTOM_HID_OutEvent_FS(uint8_t * state)
 {
   /* USER CODE BEGIN 6 */
+	uint8_t buffer[0x40];
+	memcpy(buffer, state, 0x40);
 	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+    HAL_UART_Transmit(&huart1, (uint8_t*) buffer, 0x40, 100);
+
   return (USBD_OK);
   /* USER CODE END 6 */
 }

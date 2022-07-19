@@ -8024,3 +8024,17 @@
 2022-07-18 11:00:13,604 [INFO] ProjectBuilder:2790 - Time for Copy CMSIS : 0mS.
 2022-07-18 11:01:58,233 [INFO] NvicIntPanel:100 - NVIC parent = com.st.microxplorer.plugins.ip.nvic.MultiNvicIntPanel[,0,0,506x273,layout=javax.swing.BoxLayout,alignmentX=0.0,alignmentY=0.0,border=,flags=9,maximumSize=,minimumSize=,preferredSize=]
 2022-07-18 12:32:42,218 [ERROR] LogOutputStream:74 - [STDERR_REDIRECT] 
+2022-07-19 06:05:05,300 [INFO] Activator:177 - 
+
+
+2022-07-19 06:05:05,300 [INFO] Activator:178 - !SESSION log4j initialized
+2022-07-19 06:05:47,996 [ERROR] LogOutputStream:74 - [STDERR_REDIRECT] SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+2022-07-19 06:05:48,006 [ERROR] LogOutputStream:74 - [STDERR_REDIRECT] SLF4J: Defaulting to no-operation (NOP) logger implementation
+2022-07-19 06:05:48,006 [ERROR] LogOutputStream:74 - [STDERR_REDIRECT] SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+2022-07-19 08:05:59,473 [INFO] Activator:177 - 
+
+
+2022-07-19 08:05:59,474 [INFO] Activator:178 - !SESSION log4j initialized
+2022-07-19 08:06:52,533 [ERROR] LogOutputStream:74 - [STDERR_REDIRECT] SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+2022-07-19 08:06:52,553 [ERROR] LogOutputStream:74 - [STDERR_REDIRECT] SLF4J: Defaulting to no-operation (NOP) logger implementation
+2022-07-19 08:06:52,553 [ERROR] LogOutputStream:74 - [STDERR_REDIRECT] SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
