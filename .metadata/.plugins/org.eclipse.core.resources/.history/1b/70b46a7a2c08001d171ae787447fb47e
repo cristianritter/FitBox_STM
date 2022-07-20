@@ -85,7 +85,7 @@ void LerADCS(){
   joystickhid.ry_4lsb_rx_4msb = ((ADCValue[1] & 0xf) << 4 | ADCValue[0] >> 8);
   joystickhid.ry_8msb = ADCValue[1] >> 4;
   joystickhid.rz_8lsb = ADCValue[2];
-  joystickhid.rz_4msb = ADCValue[2] >> 8;
+  joystickhid.rz_4msb = ADCValue[2] >> 4;
   HAL_Delay(1);
 }
 /* USER CODE END 0 */

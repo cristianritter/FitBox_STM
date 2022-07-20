@@ -81,11 +81,11 @@ joystickHID joystickhid = {0, 0, 0, 0, 0, 0, 0, 0};
 uint16_t ADCValue[3] = {511, 0, 0};
 
 void LerADCS(){
-  joystickhid.rx_8lsb = (ADCValue[0]);
-  joystickhid.ry_4lsb_rx_4msb = ((ADCValue[1] & 0xf) << 4 | ADCValue[0] >> 8);
+  joystickhid.rx_8lsb = ADCValue[0];
+  joystickhid.rx_4msb_ry_4lsb = ((ADCValue[0] >> 4) & 0xf0) | (ADCValue[1] & 0xf);
   joystickhid.ry_8msb = ADCValue[1] >> 4;
   joystickhid.rz_8lsb = ADCValue[2];
-  joystickhid.rz_4msb = ADCValue[2] >> 8;
+  joystickhid.rz_4msb = (ADCValue[2] >> 4) & 0xf0;
   HAL_Delay(1);
 }
 /* USER CODE END 0 */
@@ -123,7 +123,7 @@ int main(void)
   MX_USB_DEVICE_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-HAL_ADC_Start_DMA(&hadc1, (uint32_t*)ADCValue, 3);
+//HAL_ADC_Start_DMA(&hadc1, (uint32_t*)ADCValue, 3);
 
   /* USER CODE END 2 */
 
