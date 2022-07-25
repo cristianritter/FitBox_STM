@@ -34,6 +34,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define FLASH_STORAGE 0x08005000
+#define page_size 0x800
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -63,6 +65,68 @@ static void MX_USART1_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void save_to_flash(uint8_t *data)
+{
+	volatile uint32_t data_to_FLASH[(strlen((char*)data)/4)	+ (int)((strlen((char*)data) % 4) != 0)];
+	memset((uint8_t*)data_to_FLASH, 0, strlen((char*)data_to_FLASH));
+	strcpy((char*)data_to_FLASH, (char*)data);
+
+	volatile uint32_t data_length = (strlen((char*)data_to_FLASH) / 4)
+									+ (int)((strlen((char*)data_to_FLASH) % 4) != 0);
+	volatile uint16_t pages = (strlen((char*)data)/page_size)
+									+ (int)((strlen((char*)data)%page_size) != 0);
+	  /* Unlock the Flash to enable the flash control register access *************/
+	  HAL_FLASH_Unlock();
+
+	  /* Allow Access to option bytes sector */
+	  HAL_FLASH_OB_Unlock();
+
+	  /* Fill EraseInit structure*/
+	  FLASH_EraseInitTypeDef EraseInitStruct;
+	  EraseInitStruct.TypeErase = FLASH_TYPEERASE_PAGES;
+	  EraseInitStruct.PageAddress = FLASH_STORAGE;
+	  EraseInitStruct.NbPages = pages;
+	  uint32_t PageError;
+
+	  volatile uint32_t write_cnt=0, index=0;
+
+	  volatile HAL_StatusTypeDef status;
+	  status = HAL_FLASHEx_Erase(&EraseInitStruct, &PageError);
+	  while(index < data_length)
+	  {
+		  if (status == HAL_OK)
+		  {
+			  status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, FLASH_STORAGE+write_cnt, data_to_FLASH[index]);
+			  if(status == HAL_OK)
+			  {
+				  write_cnt += 4;
+				  index++;
+			  }
+		  }
+	  }
+
+	  HAL_FLASH_OB_Lock();
+	  HAL_FLASH_Lock();
+}
+
+void read_flash(uint8_t* data)
+{
+	volatile uint32_t read_data;
+	volatile uint32_t read_cnt=0;
+	do
+	{
+		read_data = *(uint32_t*)(FLASH_STORAGE + read_cnt);
+		if(read_data != 0xFFFFFFFF)
+		{
+			data[read_cnt] = (uint8_t)read_data;
+			data[read_cnt + 1] = (uint8_t)(read_data >> 8);
+			data[read_cnt + 2] = (uint8_t)(read_data >> 16);
+			data[read_cnt + 3] = (uint8_t)(read_data >> 24);
+			read_cnt += 4;
+		}
+	}while(read_data != 0xFFFFFFFF);
+}
+
 extern USBD_HandleTypeDef hUsbDeviceFS;
 
 typedef struct
@@ -76,18 +140,80 @@ typedef struct
 	uint8_t dummy_bits1 ;
 	uint8_t dummy_bits2 ;
 } joystickHID;
-joystickHID joystickhid = {0, 0, 0, 0, 0, 0, 0, 0};
 
-uint16_t ADCValue[3] = {511, 0, 0};
+joystickHID joystickhid = {0, 0, 0, 0, 0, 0, 0, 0};				// struct que contém os dados do hid é enviada pela usb
 
-void LerADCS(){
-  joystickhid.rx_8lsb = (ADCValue[0]);
-  joystickhid.ry_4lsb_rx_4msb = ((ADCValue[1] & 0xf) << 4 | ADCValue[0] >> 8);
-  joystickhid.ry_8msb = ADCValue[1] >> 4;
-  joystickhid.rz_8lsb = ADCValue[2];
-  joystickhid.rz_4msb = ADCValue[2] >> 8;
-  HAL_Delay(1);
+uint16_t ADCValue[3] = {0, 0, 0};			//Valor da leitura dos ADCs que é atualizada por uma DMA automaticamente
+uint16_t resultados[3] = {0, 0, 0};			//Valor da saida a ser enviado para o hid
+
+uint8_t sliders_data[3][6] = {
+		{0, 20, 40, 60, 80, 100},
+		{0, 20, 40, 60, 80, 100},
+		{0, 20, 40, 60, 80, 100}
+		};
+
+uint8_t range_x_data[3][6] = { 		// array de pontos em x para interpolacao do valor de saida com base nos limites min e max
+		{0, 20, 40, 60, 80, 100},
+		{0, 20, 40, 60, 80, 100},
+		{0, 20, 40, 60, 80, 100}
+		};
+
+uint8_t inverter_config[3] = {0, 0, 0};
+
+
+float interpolacao_linear(float x, uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1){
+	//"""Realiza a interpolação de x sobre uma reta dada por [(x0,y0),(x1,y1)] e retorna o valor em y"""
+	float y;
+	y = (float)y0 + ((float)y1 - (float)y0) * (x-(float)x0)/((float)x1-(float)x0);
+	return y;
 }
+
+uint8_t * ret_x0_y0_x1_y1(float x, uint8_t * x_array, uint8_t * y_array){
+	// """Com base em uma lista de pontos [(x0,y0), (x1,y1)... (xn,yn)]
+    //a funcao retorna o conjunto de pontos [(xa,ya),(xb,yb)] que formam uma reta
+    //na qual o ponto x possa ser interpolado.\n
+    //Os pontos precisam estar alistados em ordem crescente, e as listas de x e y precisam ter o mesmo tamanho."""
+	static uint8_t x0y0x1y1array[4] = {0, 0, 0, 0};
+
+	for (int i; i<6; i++){
+		if (x < (float)x_array[i]){
+			x0y0x1y1array[0] = x_array[i-1];
+			x0y0x1y1array[1] = y_array[i-1];
+			x0y0x1y1array[2] = x_array[i];
+			x0y0x1y1array[3] = y_array[i];
+			break;
+		}
+	}
+	return x0y0x1y1array;
+}
+
+uint8_t set_output(uint8_t * valor_entrada, uint8_t * sliders_data[], uint8_t * range_x_data[], uint8_t * inverter_config){
+	//"""Método que calcula e atualiza o valor de saída de acordo com o valor da entrada"""
+
+	float valor_saida[3] = {0, 0, 0};
+
+	float entrada_invertida[3] = {0, 0, 0};
+	for (int i=0; i<3; i++){
+		entrada_invertida[i] = (valor_entrada[i] / 4095)*100;		//converte o valor de entrada de 12bits para um range de 0,0 a 100,0
+		if (inverter_config[i] == 1){
+			entrada_invertida[i] = 100 - entrada_invertida[i];		// inverte a entrada caso o bit de inversao esteja ligado
+		}
+		if (entrada_invertida[i] <= range_x_data[i][0]){			// caso entrada esteja abaixa da calibracao minima
+			valor_saida[i] = sliders_data[i][0];
+			continue;
+		}
+		if (entrada_invertida[i] >= range_x_data[i][5]){			// caso a entrada esteja acima da calibracao maxima
+			valor_saida[i] = sliders_data[i][5];
+			continue;
+		}
+		uint8_t * x0y0x1y1_list = ret_x0_y0_x1_y1(entrada_invertida[i], range_x_data[i], sliders_data[i]);
+
+		valor_saida[i] = interpolacao_linear(entrada_invertida[i], x0y0x1y1_list[0], x0y0x1y1_list[1], x0y0x1y1_list[2], x0y0x1y1_list[3]);
+
+	}
+	return (int)valor_saida;
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -131,7 +257,13 @@ HAL_ADC_Start_DMA(&hadc1, (uint32_t*)ADCValue, 3);
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  LerADCS();
+
+	  joystickhid.rx_8lsb = (ADCValue[0]);
+	  joystickhid.ry_4lsb_rx_4msb = ((ADCValue[1] & 0xf) << 4 | ADCValue[0] >> 8);
+	  joystickhid.ry_8msb = ADCValue[1] >> 4;
+	  joystickhid.rz_8lsb = ADCValue[2];
+	  joystickhid.rz_4msb = ADCValue[2] >> 8;
+	  HAL_Delay(1);
 
     /* USER CODE END WHILE */
 
@@ -147,10 +279,11 @@ HAL_ADC_Start_DMA(&hadc1, (uint32_t*)ADCValue, 3);
 	  HAL_UART_Transmit(&huart1, (uint8_t*) buffer, sprintf(buffer, "%u ", joystickhid.rz_8lsb), 100);
 	  HAL_UART_Transmit(&huart1, (uint8_t*) buffer, sprintf(buffer, "%u ", ADCValue[0]), 100);
 
+
 	  uint8_t Test2[] = "\r\n Valores fim !!!\r\n"; //Data to send
 	  HAL_UART_Transmit(&huart1,Test2,sizeof(Test),10);// Sending in normal mode
 	  USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, &joystickhid, sizeof(joystickhid));
-	  HAL_Delay(1000);
+	  HAL_Delay(1);
   }
   /* USER CODE END 3 */
 }
