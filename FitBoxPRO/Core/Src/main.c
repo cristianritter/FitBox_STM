@@ -144,7 +144,6 @@ typedef struct
 joystickHID joystickhid = {0, 0, 0, 0, 0, 0, 0, 0};				// struct que contém os dados do hid é enviada pela usb
 
 uint16_t ADCValue[3] = {0, 0, 0};			//Valor da leitura dos ADCs que é atualizada por uma DMA automaticamente
-uint16_t resultados[3] = {0, 0, 0};			//Valor da saida a ser enviado para o hid
 
 uint8_t sliders_data[3][6] = {
 		{0, 20, 40, 60, 80, 100},
@@ -168,15 +167,15 @@ float interpolacao_linear(float x, uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y
 	return y;
 }
 
-uint8_t * ret_x0_y0_x1_y1(float x, uint8_t * x_array, uint8_t * y_array){
+uint8_t * ret_x0_y0_x1_y1(double x, uint8_t * x_array, uint8_t * y_array){
 	// """Com base em uma lista de pontos [(x0,y0), (x1,y1)... (xn,yn)]
     //a funcao retorna o conjunto de pontos [(xa,ya),(xb,yb)] que formam uma reta
     //na qual o ponto x possa ser interpolado.\n
     //Os pontos precisam estar alistados em ordem crescente, e as listas de x e y precisam ter o mesmo tamanho."""
 	static uint8_t x0y0x1y1array[4] = {0, 0, 0, 0};
 
-	for (int i; i<6; i++){
-		if (x < (float)x_array[i]){
+	for (int i=0; i<6; i++){
+		if (x < (double)x_array[i]){
 			x0y0x1y1array[0] = x_array[i-1];
 			x0y0x1y1array[1] = y_array[i-1];
 			x0y0x1y1array[2] = x_array[i];
@@ -187,20 +186,21 @@ uint8_t * ret_x0_y0_x1_y1(float x, uint8_t * x_array, uint8_t * y_array){
 	return x0y0x1y1array;
 }
 
-uint8_t set_output(uint8_t * valor_entrada, uint8_t * sliders_data[], uint8_t * range_x_data[], uint8_t * inverter_config){
+uint16_t* set_output(uint16_t * valor_entrada, uint8_t (*sliders_data)[6], uint8_t (*range_x_data)[6], uint8_t * inverter_config){
 	//"""Método que calcula e atualiza o valor de saída de acordo com o valor da entrada"""
 
-	float valor_saida[3] = {0, 0, 0};
+	static uint16_t valor_saida[3] = {10, 20, 30};
+	double entrada_invertida[3] = {0, 0, 0};
 
-	float entrada_invertida[3] = {0, 0, 0};
 	for (int i=0; i<3; i++){
-		entrada_invertida[i] = (valor_entrada[i] / 4095)*100;		//converte o valor de entrada de 12bits para um range de 0,0 a 100,0
+		entrada_invertida[i] = ((double)valor_entrada[i])*100/4095;		//converte o valor de entrada de 12bits para um range de 0,0 a 100,0
+
 		if (inverter_config[i] == 1){
 			entrada_invertida[i] = 100 - entrada_invertida[i];		// inverte a entrada caso o bit de inversao esteja ligado
 		}
 		if (entrada_invertida[i] <= range_x_data[i][0]){			// caso entrada esteja abaixa da calibracao minima
-			valor_saida[i] = sliders_data[i][0];
-			continue;
+			//valor_saida[i] = sliders_data[i][0];
+			//continue;
 		}
 		if (entrada_invertida[i] >= range_x_data[i][5]){			// caso a entrada esteja acima da calibracao maxima
 			valor_saida[i] = sliders_data[i][5];
@@ -209,9 +209,10 @@ uint8_t set_output(uint8_t * valor_entrada, uint8_t * sliders_data[], uint8_t * 
 		uint8_t * x0y0x1y1_list = ret_x0_y0_x1_y1(entrada_invertida[i], range_x_data[i], sliders_data[i]);
 
 		valor_saida[i] = interpolacao_linear(entrada_invertida[i], x0y0x1y1_list[0], x0y0x1y1_list[1], x0y0x1y1_list[2], x0y0x1y1_list[3]);
-
+		//valor_saida[i] = 100;
+		valor_saida[i] = valor_saida[i]*4095/100;
 	}
-	return (int)valor_saida;
+	return valor_saida;
 }
 
 /* USER CODE END 0 */
@@ -257,12 +258,12 @@ HAL_ADC_Start_DMA(&hadc1, (uint32_t*)ADCValue, 3);
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
-	  joystickhid.rx_8lsb = (ADCValue[0]);
-	  joystickhid.ry_4lsb_rx_4msb = ((ADCValue[1] & 0xf) << 4 | ADCValue[0] >> 8);
-	  joystickhid.ry_8msb = ADCValue[1] >> 4;
-	  joystickhid.rz_8lsb = ADCValue[2];
-	  joystickhid.rz_4msb = ADCValue[2] >> 8;
+	  uint16_t * OutputValue = set_output(ADCValue, sliders_data, range_x_data, inverter_config);
+	  joystickhid.rx_8lsb = (OutputValue[0]);
+	  joystickhid.ry_4lsb_rx_4msb = ((OutputValue[1] & 0xf) << 4 | OutputValue[0] >> 8);
+	  joystickhid.ry_8msb = OutputValue[1] >> 4;
+	  joystickhid.rz_8lsb = OutputValue[2];
+	  joystickhid.rz_4msb = OutputValue[2] >> 8;
 	  HAL_Delay(1);
 
     /* USER CODE END WHILE */
@@ -272,12 +273,8 @@ HAL_ADC_Start_DMA(&hadc1, (uint32_t*)ADCValue, 3);
 	  HAL_UART_Transmit(&huart1,Test,sizeof(Test),10);// Sending in normal mode
 
 	  char buffer[6];
-	  HAL_UART_Transmit(&huart1, (uint8_t*) buffer, sprintf(buffer, "%u ", joystickhid.rx_8lsb), 100);
-	  HAL_UART_Transmit(&huart1, (uint8_t*) buffer, sprintf(buffer, "%u ", joystickhid.ry_4lsb_rx_4msb), 100);
-	  HAL_UART_Transmit(&huart1, (uint8_t*) buffer, sprintf(buffer, "%u ", joystickhid.ry_8msb), 100);
-	  HAL_UART_Transmit(&huart1, (uint8_t*) buffer, sprintf(buffer, "%u ", joystickhid.rz_4msb), 100);
-	  HAL_UART_Transmit(&huart1, (uint8_t*) buffer, sprintf(buffer, "%u ", joystickhid.rz_8lsb), 100);
 	  HAL_UART_Transmit(&huart1, (uint8_t*) buffer, sprintf(buffer, "%u ", ADCValue[0]), 100);
+	  HAL_UART_Transmit(&huart1, (uint8_t*) buffer, sprintf(buffer, "%u ", OutputValue[0]), 100);
 
 
 	  uint8_t Test2[] = "\r\n Valores fim !!!\r\n"; //Data to send
