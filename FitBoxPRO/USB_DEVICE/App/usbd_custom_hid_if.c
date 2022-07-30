@@ -63,6 +63,9 @@
 
 /* USER CODE BEGIN PRIVATE_DEFINES */
 uint8_t buffer[0x40];
+#define FLASH_STORAGE 0x08019000
+#define page_size 0x400
+
 /* USER CODE END PRIVATE_DEFINES */
 
 /**
@@ -75,6 +78,50 @@ uint8_t buffer[0x40];
   */
 
 /* USER CODE BEGIN PRIVATE_MACRO */
+
+void save_to_flash(uint8_t *data)
+{
+	volatile uint32_t data_to_FLASH[(strlen((char*)data)/4)	+ (int)((strlen((char*)data) % 4) != 0)];
+	memset((uint8_t*)data_to_FLASH, 0, strlen((char*)data_to_FLASH));
+	strcpy((char*)data_to_FLASH, (char*)data);
+
+	volatile uint32_t data_length = (strlen((char*)data_to_FLASH) / 4)
+									+ (int)((strlen((char*)data_to_FLASH) % 4) != 0);
+	volatile uint16_t pages = (strlen((char*)data)/page_size)
+									+ (int)((strlen((char*)data)%page_size) != 0);
+	  /* Unlock the Flash to enable the flash control register access *************/
+	  HAL_FLASH_Unlock();
+
+	  /* Allow Access to option bytes sector */
+	  HAL_FLASH_OB_Unlock();
+
+	  /* Fill EraseInit structure*/
+	  FLASH_EraseInitTypeDef EraseInitStruct;
+	  EraseInitStruct.TypeErase = FLASH_TYPEERASE_PAGES;
+	  EraseInitStruct.PageAddress = FLASH_STORAGE;
+	  EraseInitStruct.NbPages = pages;
+	  uint32_t PageError;
+
+	  volatile uint32_t write_cnt=0, index=0;
+
+	  volatile HAL_StatusTypeDef status;
+	  status = HAL_FLASHEx_Erase(&EraseInitStruct, &PageError);
+	  while(index < data_length)
+	  {
+		  if (status == HAL_OK)
+		  {
+			  status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, FLASH_STORAGE+write_cnt, data_to_FLASH[index]);
+			  if(status == HAL_OK)
+			  {
+				  write_cnt += 4;
+				  index++;
+			  }
+		  }
+	  }
+
+	  HAL_FLASH_OB_Lock();
+	  HAL_FLASH_Lock();
+}
 
 /* USER CODE END PRIVATE_MACRO */
 
@@ -200,12 +247,36 @@ static int8_t CUSTOM_HID_DeInit_FS(void)
 static int8_t CUSTOM_HID_OutEvent_FS(uint8_t * state)
 {
   /* USER CODE BEGIN 6 */
-	uint8_t buffer[0x40];
-	memcpy(buffer, state, 0x40);
-	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-    HAL_UART_Transmit(&huart1, (uint8_t*) buffer, 0x40, 100);
+	//	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 
-  return (USBD_OK);
+    static uint8_t position;
+	static char * data_to_send[0xC0]; //0x40 * 3
+
+    if (state[0] == 'I'){
+		position = 0;
+		return 0;
+	}
+
+    //char * buffer[0x40];
+    //memcpy(buffer, state, 0x40);
+
+    memcpy(&data_to_send[position], state, 0x40);
+    position = position+16;
+
+	if (position >= 48){  //informa que a terceira linha foi recebida
+	    //HAL_UART_Transmit(&huart1, (uint8_t*) data_to_send, 0xC0, 100);
+	    position = 0;
+		save_to_flash((uint8_t *)data_to_send);
+		NVIC_SystemReset();
+		//reset microcontroler
+//		#if KIN1_IS_USING_KINETIS_SDK
+//		  SCB_AIRCR = (0x5FA<<SCB_AIRCR_VECTKEY_Pos)|SCB_AIRCR_SYSRESETREQ_Msk;
+//		#endif
+//		  for(;;) {
+//			/* wait until reset */
+//		  }
+	}
+	return (USBD_OK);
   /* USER CODE END 6 */
 }
 

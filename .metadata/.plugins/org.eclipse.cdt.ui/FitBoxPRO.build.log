@@ -1,21 +1,17 @@
-10:44:21 **** Incremental Build of configuration Debug for project FitBoxPRO ****
+12:14:25 **** Incremental Build of configuration Debug for project FitBoxPRO ****
 make -j4 all 
-arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m3 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F103xB -c -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Core/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CustomHID/Inc -I../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "Core/Src/main.o"
-../Core/Src/main.c: In function 'main':
-../Core/Src/main.c:282:4: warning: implicit declaration of function 'USBD_CUSTOM_HID_SendReport' [-Wimplicit-function-declaration]
-  282 |    USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, &joystickhid, sizeof(joystickhid));
-      |    ^~~~~~~~~~~~~~~~~~~~~~~~~~
+arm-none-eabi-gcc "../USB_DEVICE/App/usbd_custom_hid_if.c" -mcpu=cortex-m3 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F103xB -c -I../USB_DEVICE/App -I../USB_DEVICE/Target -I../Core/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I../Middlewares/ST/STM32_USB_Device_Library/Class/CustomHID/Inc -I../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"USB_DEVICE/App/usbd_custom_hid_if.d" -MT"USB_DEVICE/App/usbd_custom_hid_if.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "USB_DEVICE/App/usbd_custom_hid_if.o"
 arm-none-eabi-gcc -o "FitBoxPRO.elf" @"objects.list"   -mcpu=cortex-m3 -T"C:\Users\cristian_ritter\Documents\PROJETOS\FitBox_STM\FitBoxPRO\STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="FitBoxPRO.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 Finished building target: FitBoxPRO.elf
  
 arm-none-eabi-size   FitBoxPRO.elf 
 arm-none-eabi-objdump -h -S  FitBoxPRO.elf  > "FitBoxPRO.list"
    text	   data	    bss	    dec	    hex	filename
-  42392	    532	   3860	  46784	   b6c0	FitBoxPRO.elf
+  47540	    532	   4664	  52736	   ce00	FitBoxPRO.elf
 Finished building: default.size.stdout
  
 Finished building: FitBoxPRO.list
  
 
-10:44:23 Build Finished. 0 errors, 1 warnings. (took 2s.282ms)
+12:14:31 Build Finished. 0 errors, 0 warnings. (took 5s.626ms)
 

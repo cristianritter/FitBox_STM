@@ -34,8 +34,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define FLASH_STORAGE 0x08005000
-#define page_size 0x800
+#define FLASH_STORAGE 0x08019000
+#define page_size 0x400
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -65,49 +66,6 @@ static void MX_USART1_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void save_to_flash(uint8_t *data)
-{
-	volatile uint32_t data_to_FLASH[(strlen((char*)data)/4)	+ (int)((strlen((char*)data) % 4) != 0)];
-	memset((uint8_t*)data_to_FLASH, 0, strlen((char*)data_to_FLASH));
-	strcpy((char*)data_to_FLASH, (char*)data);
-
-	volatile uint32_t data_length = (strlen((char*)data_to_FLASH) / 4)
-									+ (int)((strlen((char*)data_to_FLASH) % 4) != 0);
-	volatile uint16_t pages = (strlen((char*)data)/page_size)
-									+ (int)((strlen((char*)data)%page_size) != 0);
-	  /* Unlock the Flash to enable the flash control register access *************/
-	  HAL_FLASH_Unlock();
-
-	  /* Allow Access to option bytes sector */
-	  HAL_FLASH_OB_Unlock();
-
-	  /* Fill EraseInit structure*/
-	  FLASH_EraseInitTypeDef EraseInitStruct;
-	  EraseInitStruct.TypeErase = FLASH_TYPEERASE_PAGES;
-	  EraseInitStruct.PageAddress = FLASH_STORAGE;
-	  EraseInitStruct.NbPages = pages;
-	  uint32_t PageError;
-
-	  volatile uint32_t write_cnt=0, index=0;
-
-	  volatile HAL_StatusTypeDef status;
-	  status = HAL_FLASHEx_Erase(&EraseInitStruct, &PageError);
-	  while(index < data_length)
-	  {
-		  if (status == HAL_OK)
-		  {
-			  status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, FLASH_STORAGE+write_cnt, data_to_FLASH[index]);
-			  if(status == HAL_OK)
-			  {
-				  write_cnt += 4;
-				  index++;
-			  }
-		  }
-	  }
-
-	  HAL_FLASH_OB_Lock();
-	  HAL_FLASH_Lock();
-}
 
 void read_flash(uint8_t* data)
 {
@@ -145,13 +103,13 @@ joystickHID joystickhid = {0, 0, 0, 0, 0, 0, 0, 0};				// struct que contém os 
 
 uint16_t ADCValue[3] = {0, 0, 0};			//Valor da leitura dos ADCs que é atualizada por uma DMA automaticamente
 
-uint8_t sliders_data[3][6] = {
+uint8_t range_x_data[3][6] = { 		// array de pontos em x para interpolacao do valor de saida com base nos limites min e max
 		{0, 20, 40, 60, 80, 100},
 		{0, 20, 40, 60, 80, 100},
 		{0, 20, 40, 60, 80, 100}
 		};
 
-uint8_t range_x_data[3][6] = { 		// array de pontos em x para interpolacao do valor de saida com base nos limites min e max
+uint8_t sliders_data[3][6] = {
 		{0, 20, 40, 60, 80, 100},
 		{0, 20, 40, 60, 80, 100},
 		{0, 20, 40, 60, 80, 100}
@@ -159,6 +117,63 @@ uint8_t range_x_data[3][6] = { 		// array de pontos em x para interpolacao do va
 
 uint8_t inverter_config[3] = {0, 0, 0};
 
+void update_data_from_flash(uint8_t (*range_x_data)[6], uint8_t (*sliders_data)[6], uint8_t (*inverter_config)){
+	char data[0xC0];
+	read_flash((uint8_t *)data);
+    char * token = strtok(data,",");				//first strtok go to variable directly
+    range_x_data[0][0] = atoi(token);
+
+    for (int i=1; i<6; i++){						// fills first array of range_x for first pedal
+    	token = strtok(NULL,",");
+    	range_x_data[0][i] = atoi(token);
+    }
+
+	for (int i=0; i<6; i++){						// until all arrays be full filled for first pedal
+		token = strtok(NULL,",");
+		sliders_data[0][i] = atoi(token);
+	}
+
+	token = strtok(NULL,",");						// inverted for first pedal
+	inverter_config[0] = atoi(token);
+
+
+	for (int i=0; i<6; i++){						// until all arrays be full filled
+		token = strtok(NULL,",");
+		range_x_data[1][i] = atoi(token);
+	}
+
+	for (int i=0; i<6; i++){						// until all arrays be full filled
+		token = strtok(NULL,",");
+		sliders_data[1][i] = atoi(token);
+	}
+
+	token = strtok(NULL,",");						// inverted for second pedal
+	inverter_config[1] = atoi(token);
+
+	for (int i=0; i<6; i++){						// until all arrays be full filled
+		token = strtok(NULL,",");
+		range_x_data[2][i] = atoi(token);
+	}
+
+	for (int i=0; i<6; i++){						// until all arrays be full filled
+		token = strtok(NULL,",");
+		sliders_data[2][i] = atoi(token);
+	}
+
+	token = strtok(NULL,",");						// inverted for third pedal
+	inverter_config[2] = atoi(token);
+
+
+//	while(token != NULL){
+//		  token = strtok(NULL,",");
+//		  value = atoi(token);
+//		  char buffer2[6];
+//		  HAL_UART_Transmit(&huart1, (uint8_t *)buffer2, sprintf(buffer2, "%u ", value), 100);
+//		  //HAL_UART_Transmit(&huart1,(uint8_t *)token,strlen(token),10);// Sending in normal mode
+//		  uint8_t Test[] = "\r\n"; //Data to send
+//	  	  HAL_UART_Transmit(&huart1,Test,sizeof(Test),10);// Sending in normal mode
+//	  }
+}
 
 float interpolacao_linear(float x, uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1){
 	//"""Realiza a interpolação de x sobre uma reta dada por [(x0,y0),(x1,y1)] e retorna o valor em y"""
@@ -251,7 +266,7 @@ int main(void)
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 HAL_ADC_Start_DMA(&hadc1, (uint32_t*)ADCValue, 3);
-
+update_data_from_flash(range_x_data, sliders_data, inverter_config);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -269,18 +284,18 @@ HAL_ADC_Start_DMA(&hadc1, (uint32_t*)ADCValue, 3);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  uint8_t Test[] = "Valores inicio !!!\r\n"; //Data to send
-	  HAL_UART_Transmit(&huart1,Test,sizeof(Test),10);// Sending in normal mode
 
-	  char buffer[6];
-	  HAL_UART_Transmit(&huart1, (uint8_t*) buffer, sprintf(buffer, "%u ", ADCValue[0]), 100);
-	  HAL_UART_Transmit(&huart1, (uint8_t*) buffer, sprintf(buffer, "%u ", OutputValue[0]), 100);
+//	  HAL_UART_Transmit(&huart1, (uint8_t*) buffer, sprintf(buffer, "%u ", ADCValue[0]), 100);
+//	  HAL_UART_Transmit(&huart1, (uint8_t*) buffer, sprintf(buffer, "%u ", OutputValue[0]), 100);
 
 
-	  uint8_t Test2[] = "\r\n Valores fim !!!\r\n"; //Data to send
-	  HAL_UART_Transmit(&huart1,Test2,sizeof(Test),10);// Sending in normal mode
+//	  uint8_t Test2[] = "\r\n Valores fim !!!\r\n"; //Data to send
+//	  HAL_UART_Transmit(&huart1,Test2,sizeof(Test),10);// Sending in normal mode
+
+  	  uint8_t Test[] = "Fim\r\n"; //Data to send
+  	  HAL_UART_Transmit(&huart1,Test,sizeof(Test),10);// Sending in normal mode
 	  USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, &joystickhid, sizeof(joystickhid));
-	  HAL_Delay(1);
+	  HAL_Delay(2000);
   }
   /* USER CODE END 3 */
 }
