@@ -62,7 +62,7 @@
   */
 
 /* USER CODE BEGIN PRIVATE_DEFINES */
-//uint8_t buffer[0x40];
+uint8_t buffer[0x40];
 #define FLASH_STORAGE 0x08019000
 #define page_size 0x400
 
@@ -183,9 +183,6 @@ extern USBD_HandleTypeDef hUsbDeviceFS;
 
 /* USER CODE BEGIN EXPORTED_VARIABLES */
 extern UART_HandleTypeDef huart1;
-extern uint8_t sliders_data;
-extern uint8_t range_x_data;
-extern uint8_t inverter_config;
 /* USER CODE END EXPORTED_VARIABLES */
 /**
   * @}
@@ -260,13 +257,28 @@ static int8_t CUSTOM_HID_OutEvent_FS(uint8_t * state)
 		return 0;
 	}
 
+    //char * buffer[0x40];
+    //memcpy(buffer, state, 0x40);
+
     memcpy(&data_to_send[position], state, 0x40);
     position = position+16;
 
 	if (position >= 48){  //informa que a terceira linha foi recebida
+	    //HAL_UART_Transmit(&huart1, (uint8_t*) data_to_send, 0xC0, 100);
 	    position = 0;
 		save_to_flash((uint8_t *)data_to_send);
-		update_data_from_flash(sliders_data, range_x_data, inverter_config);
+		HAL_Delay(200);
+		update_data_from_flash(sliders_data, range_x_data, inverter_config)
+		//		NVIC_SystemReset();
+//		for(;;){
+//		}
+		//reset microcontroler
+//		#if KIN1_IS_USING_KINETIS_SDK
+//		  SCB_AIRCR = (0x5FA<<SCB_AIRCR_VECTKEY_Pos)|SCB_AIRCR_SYSRESETREQ_Msk;
+//		#endif
+//		  for(;;) {
+//			/* wait until reset */
+//		  }
 	}
 	return (USBD_OK);
   /* USER CODE END 6 */

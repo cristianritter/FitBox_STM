@@ -273,8 +273,8 @@ int main(void)
 	  joystickhid.ry_8msb = OutputValue[1] >> 4;
 	  joystickhid.rz_8lsb = OutputValue[2];
 	  joystickhid.rz_4msb = OutputValue[2] >> 8;
-//  	  uint8_t Test[] = "Fim\r\n"; //Data to send
-//  	  HAL_UART_Transmit(&huart1,Test,sizeof(Test),10);// Sending in normal mode
+  	  uint8_t Test[] = "Fim\r\n"; //Data to send
+  	  HAL_UART_Transmit(&huart1,Test,sizeof(Test),10);// Sending in normal mode
 	  USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, &joystickhid, sizeof(joystickhid));
 	  HAL_Delay(1);
 

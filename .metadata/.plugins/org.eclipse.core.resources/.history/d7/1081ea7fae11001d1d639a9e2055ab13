@@ -62,7 +62,7 @@
   */
 
 /* USER CODE BEGIN PRIVATE_DEFINES */
-//uint8_t buffer[0x40];
+uint8_t buffer[0x40];
 #define FLASH_STORAGE 0x08019000
 #define page_size 0x400
 
