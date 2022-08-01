@@ -267,7 +267,11 @@ static int8_t CUSTOM_HID_OutEvent_FS(uint8_t * state)
 	    //HAL_UART_Transmit(&huart1, (uint8_t*) data_to_send, 0xC0, 100);
 	    position = 0;
 		save_to_flash((uint8_t *)data_to_send);
+		HAL_Delay(200);
 		NVIC_SystemReset();
+		for(;;){
+
+		}
 		//reset microcontroler
 //		#if KIN1_IS_USING_KINETIS_SDK
 //		  SCB_AIRCR = (0x5FA<<SCB_AIRCR_VECTKEY_Pos)|SCB_AIRCR_SYSRESETREQ_Msk;

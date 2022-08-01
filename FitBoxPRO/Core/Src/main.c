@@ -47,7 +47,6 @@
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
-
 UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
@@ -117,20 +116,20 @@ uint8_t sliders_data[3][6] = {
 
 uint8_t inverter_config[3] = {0, 0, 0};
 
-void update_data_from_flash(uint8_t (*range_x_data)[6], uint8_t (*sliders_data)[6], uint8_t (*inverter_config)){
+void update_data_from_flash(uint8_t (*sliders_data)[6], uint8_t (*range_x_data)[6], uint8_t (*inverter_config)){
 	char data[0xC0];
 	read_flash((uint8_t *)data);
     char * token = strtok(data,",");				//first strtok go to variable directly
-    range_x_data[0][0] = atoi(token);
+    sliders_data[0][0] = atoi(token);
 
     for (int i=1; i<6; i++){						// fills first array of range_x for first pedal
     	token = strtok(NULL,",");
-    	range_x_data[0][i] = atoi(token);
+    	sliders_data[0][i] = atoi(token);
     }
 
 	for (int i=0; i<6; i++){						// until all arrays be full filled for first pedal
 		token = strtok(NULL,",");
-		sliders_data[0][i] = atoi(token);
+		range_x_data[0][i] = atoi(token);
 	}
 
 	token = strtok(NULL,",");						// inverted for first pedal
@@ -139,12 +138,12 @@ void update_data_from_flash(uint8_t (*range_x_data)[6], uint8_t (*sliders_data)[
 
 	for (int i=0; i<6; i++){						// until all arrays be full filled
 		token = strtok(NULL,",");
-		range_x_data[1][i] = atoi(token);
+		sliders_data[1][i] = atoi(token);
 	}
 
 	for (int i=0; i<6; i++){						// until all arrays be full filled
 		token = strtok(NULL,",");
-		sliders_data[1][i] = atoi(token);
+		range_x_data[1][i] = atoi(token);
 	}
 
 	token = strtok(NULL,",");						// inverted for second pedal
@@ -152,27 +151,17 @@ void update_data_from_flash(uint8_t (*range_x_data)[6], uint8_t (*sliders_data)[
 
 	for (int i=0; i<6; i++){						// until all arrays be full filled
 		token = strtok(NULL,",");
-		range_x_data[2][i] = atoi(token);
+		sliders_data[2][i] = atoi(token);
 	}
 
 	for (int i=0; i<6; i++){						// until all arrays be full filled
 		token = strtok(NULL,",");
-		sliders_data[2][i] = atoi(token);
+		range_x_data[2][i] = atoi(token);
 	}
 
 	token = strtok(NULL,",");						// inverted for third pedal
 	inverter_config[2] = atoi(token);
 
-
-//	while(token != NULL){
-//		  token = strtok(NULL,",");
-//		  value = atoi(token);
-//		  char buffer2[6];
-//		  HAL_UART_Transmit(&huart1, (uint8_t *)buffer2, sprintf(buffer2, "%u ", value), 100);
-//		  //HAL_UART_Transmit(&huart1,(uint8_t *)token,strlen(token),10);// Sending in normal mode
-//		  uint8_t Test[] = "\r\n"; //Data to send
-//	  	  HAL_UART_Transmit(&huart1,Test,sizeof(Test),10);// Sending in normal mode
-//	  }
 }
 
 float interpolacao_linear(float x, uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1){
@@ -213,12 +202,16 @@ uint16_t* set_output(uint16_t * valor_entrada, uint8_t (*sliders_data)[6], uint8
 		if (inverter_config[i] == 1){
 			entrada_invertida[i] = 100 - entrada_invertida[i];		// inverte a entrada caso o bit de inversao esteja ligado
 		}
-		if (entrada_invertida[i] <= range_x_data[i][0]){			// caso entrada esteja abaixa da calibracao minima
-			//valor_saida[i] = sliders_data[i][0];
-			//continue;
+		char buffer[12];
+		HAL_UART_Transmit(&huart1, (uint8_t*) buffer, sprintf(buffer, "%u ", (uint16_t)entrada_invertida[i]), 100);
+		HAL_UART_Transmit(&huart1, (uint8_t*) buffer, sprintf(buffer, "%u ", range_x_data[i][0]), 100);
+
+		if ((uint16_t)entrada_invertida[i] <= range_x_data[i][0]){			// caso entrada esteja abaixa da calibracao minima
+			valor_saida[i] = (uint16_t)sliders_data[i][0];
+			continue;
 		}
-		if (entrada_invertida[i] >= range_x_data[i][5]){			// caso a entrada esteja acima da calibracao maxima
-			valor_saida[i] = sliders_data[i][5];
+		if ((uint16_t)entrada_invertida[i] >= range_x_data[i][5]){			// caso a entrada esteja acima da calibracao maxima
+			valor_saida[i] = (uint16_t)sliders_data[i][5];
 			continue;
 		}
 		uint8_t * x0y0x1y1_list = ret_x0_y0_x1_y1(entrada_invertida[i], range_x_data[i], sliders_data[i]);
@@ -226,6 +219,8 @@ uint16_t* set_output(uint16_t * valor_entrada, uint8_t (*sliders_data)[6], uint8
 		valor_saida[i] = interpolacao_linear(entrada_invertida[i], x0y0x1y1_list[0], x0y0x1y1_list[1], x0y0x1y1_list[2], x0y0x1y1_list[3]);
 		//valor_saida[i] = 100;
 		valor_saida[i] = valor_saida[i]*4095/100;
+//		char buffer[8];
+//	    HAL_UART_Transmit(&huart1, (uint8_t*) buffer, sprintf(buffer, "%u ", valor_saida[0]), 100);
 	}
 	return valor_saida;
 }
@@ -245,8 +240,7 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
-
+	HAL_Init();
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
@@ -265,8 +259,8 @@ int main(void)
   MX_USB_DEVICE_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-HAL_ADC_Start_DMA(&hadc1, (uint32_t*)ADCValue, 3);
-update_data_from_flash(range_x_data, sliders_data, inverter_config);
+  HAL_ADC_Start_DMA(&hadc1, (uint32_t*)ADCValue, 3);
+  update_data_from_flash(sliders_data, range_x_data, inverter_config);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -279,6 +273,9 @@ update_data_from_flash(range_x_data, sliders_data, inverter_config);
 	  joystickhid.ry_8msb = OutputValue[1] >> 4;
 	  joystickhid.rz_8lsb = OutputValue[2];
 	  joystickhid.rz_4msb = OutputValue[2] >> 8;
+  	  uint8_t Test[] = "Fim\r\n"; //Data to send
+  	  HAL_UART_Transmit(&huart1,Test,sizeof(Test),10);// Sending in normal mode
+	  USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, &joystickhid, sizeof(joystickhid));
 	  HAL_Delay(1);
 
     /* USER CODE END WHILE */
@@ -292,10 +289,6 @@ update_data_from_flash(range_x_data, sliders_data, inverter_config);
 //	  uint8_t Test2[] = "\r\n Valores fim !!!\r\n"; //Data to send
 //	  HAL_UART_Transmit(&huart1,Test2,sizeof(Test),10);// Sending in normal mode
 
-  	  uint8_t Test[] = "Fim\r\n"; //Data to send
-  	  HAL_UART_Transmit(&huart1,Test,sizeof(Test),10);// Sending in normal mode
-	  USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, &joystickhid, sizeof(joystickhid));
-	  HAL_Delay(2000);
   }
   /* USER CODE END 3 */
 }
