@@ -183,6 +183,9 @@ extern USBD_HandleTypeDef hUsbDeviceFS;
 
 /* USER CODE BEGIN EXPORTED_VARIABLES */
 extern UART_HandleTypeDef huart1;
+extern uint8_t sliders_data;
+extern uint8_t range_x_data;
+extern uint8_t inverter_config;
 extern uint8_t updating;
 /* USER CODE END EXPORTED_VARIABLES */
 /**
@@ -265,7 +268,8 @@ static int8_t CUSTOM_HID_OutEvent_FS(uint8_t * state)
 	    position = 0;
 		save_to_flash((uint8_t *)data_to_send);
 		updating = 1;
-//		HAL_Delay(5); delay aqui trava o stm
+		update_data_from_flash(sliders_data, range_x_data, inverter_config);
+		updating = 0;
 	}
 	return (USBD_OK);
   /* USER CODE END 6 */

@@ -102,8 +102,6 @@ joystickHID joystickhid = {0, 0, 0, 0, 0, 0, 0, 0};				// struct que contém os 
 
 uint16_t ADCValue[3] = {0, 0, 0};			//Valor da leitura dos ADCs que é atualizada por uma DMA automaticamente
 
-uint8_t updating = 0;
-
 uint8_t range_x_data[3][6] = { 		// array de pontos em x para interpolacao do valor de saida com base nos limites min e max
 		{0, 20, 40, 60, 80, 100},
 		{0, 20, 40, 60, 80, 100},
@@ -269,18 +267,14 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  if (updating){
-		  updating = 0;
-		  update_data_from_flash(sliders_data, range_x_data, inverter_config);
-	  }
 	  uint16_t * OutputValue = set_output(ADCValue, sliders_data, range_x_data, inverter_config);
 	  joystickhid.rx_8lsb = (OutputValue[0]);
 	  joystickhid.ry_4lsb_rx_4msb = ((OutputValue[1] & 0xf) << 4 | OutputValue[0] >> 8);
 	  joystickhid.ry_8msb = OutputValue[1] >> 4;
 	  joystickhid.rz_8lsb = OutputValue[2];
 	  joystickhid.rz_4msb = OutputValue[2] >> 8;
-  	  uint8_t Test[] = "Fim\r\n"; //Data to send
-  	  HAL_UART_Transmit(&huart1,Test,sizeof(Test),10);// Sending in normal mode
+//  	  uint8_t Test[] = "Fim\r\n"; //Data to send
+//  	  HAL_UART_Transmit(&huart1,Test,sizeof(Test),10);// Sending in normal mode
 	  USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, &joystickhid, sizeof(joystickhid));
 	  HAL_Delay(1);
 

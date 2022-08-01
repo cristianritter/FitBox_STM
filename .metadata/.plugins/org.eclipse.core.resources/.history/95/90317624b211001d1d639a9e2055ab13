@@ -266,6 +266,8 @@ static int8_t CUSTOM_HID_OutEvent_FS(uint8_t * state)
 		save_to_flash((uint8_t *)data_to_send);
 		updating = 1;
 //		HAL_Delay(5); delay aqui trava o stm
+		//update_data_from_flash(sliders_data, range_x_data, inverter_config);
+//		updating = 0;
 	}
 	return (USBD_OK);
   /* USER CODE END 6 */

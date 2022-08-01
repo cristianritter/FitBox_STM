@@ -269,9 +269,9 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  if (updating){
-		  updating = 0;
-		  update_data_from_flash(sliders_data, range_x_data, inverter_config);
+	  while (updating){
+		  char buffer[8];
+		  HAL_UART_Transmit(&huart1, (uint8_t*) buffer, sprintf(buffer, "%u ", updating), 100);
 	  }
 	  uint16_t * OutputValue = set_output(ADCValue, sliders_data, range_x_data, inverter_config);
 	  joystickhid.rx_8lsb = (OutputValue[0]);
