@@ -195,8 +195,8 @@ uint8_t * ret_x0_y0_x1_y1(double x, uint8_t * x_array, uint8_t * y_array){
 uint16_t* set_output(uint16_t * valor_entrada, uint8_t (*sliders_data)[6], uint8_t (*range_x_data)[6], uint8_t * inverter_config){
 	//"""Método que calcula e atualiza o valor de saída de acordo com o valor da entrada"""
 
-	static uint16_t valor_saida[3] = {0, 0, 0};
-	float entrada_invertida[3] = {0, 0, 0};        //alterei pra usar menor memoria
+	static uint16_t valor_saida[3] = {10, 20, 30};
+	double entrada_invertida[3] = {0, 0, 0};
 
 	for (int i=0; i<3; i++){
 		entrada_invertida[i] = ((double)valor_entrada[i])*100/4095;		//converte o valor de entrada de 12bits para um range de 0,0 a 100,0
@@ -204,9 +204,9 @@ uint16_t* set_output(uint16_t * valor_entrada, uint8_t (*sliders_data)[6], uint8
 		if (inverter_config[i] == 1){
 			entrada_invertida[i] = 100 - entrada_invertida[i];		// inverte a entrada caso o bit de inversao esteja ligado
 		}
-//		char buffer[12];
-//		HAL_UART_Transmit(&huart1, (uint8_t*) buffer, sprintf(buffer, "%u ", (uint16_t)entrada_invertida[i]), 100);
-//		HAL_UART_Transmit(&huart1, (uint8_t*) buffer, sprintf(buffer, "%u ", range_x_data[i][0]), 100);
+		char buffer[12];
+		HAL_UART_Transmit(&huart1, (uint8_t*) buffer, sprintf(buffer, "%u ", (uint16_t)entrada_invertida[i]), 100);
+		HAL_UART_Transmit(&huart1, (uint8_t*) buffer, sprintf(buffer, "%u ", range_x_data[i][0]), 100);
 
 		if ((uint16_t)entrada_invertida[i] <= range_x_data[i][0]){			// caso entrada esteja abaixa da calibracao minima
 			valor_saida[i] = (uint16_t)sliders_data[i][0];
@@ -220,7 +220,7 @@ uint16_t* set_output(uint16_t * valor_entrada, uint8_t (*sliders_data)[6], uint8
 		uint8_t * x0y0x1y1_list = ret_x0_y0_x1_y1(entrada_invertida[i], range_x_data[i], sliders_data[i]);
 		valor_saida[i] = interpolacao_linear(entrada_invertida[i], x0y0x1y1_list[0], x0y0x1y1_list[1], x0y0x1y1_list[2], x0y0x1y1_list[3]);
 		}
-		valor_saida[i] = valor_saida[i]*4095/100;         //transforma o valor de saida de 0-100 em 12 bits
+		valor_saida[i] = valor_saida[i]*4095/100;
 //		char buffer[8];
 //	    HAL_UART_Transmit(&huart1, (uint8_t*) buffer, sprintf(buffer, "%u ", valor_saida[0]), 100);
 	}
@@ -279,8 +279,8 @@ int main(void)
 	  joystickhid.ry_8msb = OutputValue[1] >> 4;
 	  joystickhid.rz_8lsb = OutputValue[2];
 	  joystickhid.rz_4msb = OutputValue[2] >> 8;
-//  	  uint8_t Test[] = "Fim\r\n"; //Data to send
-//  	  HAL_UART_Transmit(&huart1,Test,sizeof(Test),10);// Sending in normal mode
+  	  uint8_t Test[] = "Fim\r\n"; //Data to send
+  	  HAL_UART_Transmit(&huart1,Test,sizeof(Test),10);// Sending in normal mode
 	  USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, &joystickhid, sizeof(joystickhid));
 	  HAL_Delay(1);
 
