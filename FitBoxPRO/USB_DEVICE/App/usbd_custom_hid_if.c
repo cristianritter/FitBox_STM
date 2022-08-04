@@ -179,11 +179,12 @@ __ALIGN_BEGIN static uint8_t CUSTOM_HID_ReportDesc_FS[USBD_CUSTOM_HID_REPORT_DES
   * @brief Public variables.
   * @{
   */
-extern USBD_HandleTypeDef hUsbDeviceFS;
+//extern USBD_HandleTypeDef hUsbDeviceFS;
 
 /* USER CODE BEGIN EXPORTED_VARIABLES */
-extern UART_HandleTypeDef huart1;
+//extern UART_HandleTypeDef huart1;
 extern uint8_t updating;
+extern uint8_t calibracao;
 /* USER CODE END EXPORTED_VARIABLES */
 /**
   * @}
@@ -255,6 +256,17 @@ static int8_t CUSTOM_HID_OutEvent_FS(uint8_t * state)
 
     if (state[0] == 'I'){
 		position = 0;
+		return 0;
+	}
+
+    else if (state[0] == 'C'){
+		calibracao = 1;
+		return 0;
+	}
+
+    else if (state[0] == 'N'){
+		calibracao = 0;
+		updating = 1;
 		return 0;
 	}
 
