@@ -218,6 +218,12 @@ uint16_t* set_output(uint16_t * valor_entrada, uint16_t (*sliders_data)[6], uint
 			sliders_data[i][3] = 600;
 			sliders_data[i][4] = 800;
 			sliders_data[i][5] = 1000;
+			range_x_data[i][0] = 0;
+			range_x_data[i][1] = 200;
+			range_x_data[i][2] = 400;
+			range_x_data[i][3] = 600;
+			range_x_data[i][4] = 800;
+			range_x_data[i][5] = 1000;
 		}
 
 		if ((uint16_t)entrada_invertida[i] <= range_x_data[i][0]){			// caso entrada esteja abaixa da calibracao minima
